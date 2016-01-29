@@ -2,22 +2,11 @@ function User(sock,redis){
   var self = this;
   self.sock = sock;
   self.redis = redis;
-  
-  self.id = self.sock.id;
-  self.name = "User #" + Date.now().toString().slice(-3);
 
   // redis event
   self.onRedis = function(ch,json){
-    //console.log('onRedis');
     var msg = JSON.parse(json);
-    switch(msg.action){
-      case "message":
-        self.onRedisMessage(msg);
-        break;
-      case "pm":
-        self.onRedisPM(msg);
-        break;
-    }
+    self.write(msg);
   };
 
   self.redis.on(self.onRedis);
@@ -25,14 +14,7 @@ function User(sock,redis){
   // sock event
   self.onSock = function(json){
     var msg = JSON.parse(json);
-    switch(msg.action){
-      case "message":
-        self.onSockMessage(msg);
-        break;
-      case "pm":
-        self.onSockPM(msg);
-        break;
-    }
+    self.pub(msg);
   };
 
   self.sock.on('data',self.onSock);
@@ -44,35 +26,11 @@ function User(sock,redis){
 }
 
 User.prototype.pub = function(msg){
-  msg.id = this.id;
-  msg.user = this.name;
   this.redis.pub(msg);
 };
 
 User.prototype.write = function(msg){
   this.sock.write(JSON.stringify(msg));
 };
-
-// sock event
-User.prototype.onSockMessage = function(msg){
-  this.pub(msg);
-}
-
-User.prototype.onSockPM = function(msg){
-  this.pub(msg);
-  msg.action = "pm_sent";
-  this.write(msg);
-}
-
-// redis event
-User.prototype.onRedisMessage = function(msg){
-  this.write(msg);
-}
-
-User.prototype.onRedisPM = function(msg){
-  if(msg.target.id == this.id){
-    this.write(msg);
-  }
-}
 
 module.exports = User;
