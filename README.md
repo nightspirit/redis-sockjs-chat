@@ -160,3 +160,83 @@ sock_server.on('connection', function(sock) {
 ```
 
 > Try launch two applications in different port. With redis, they can still talk to each others.
+
+## 3. Add more features, start making complex chat application
+
+In order to add more features, we have to send different types of message. And according to that we guide them into different handler. Here are examples how you define your message.
+
+```javascript
+{
+  action: "message",
+  message: "hello"
+}
+
+{
+  action: "pm",
+  target: {
+    id: 12345,
+    user: "foo"
+  }
+  message: "How are you"
+}
+```
+
+The most important part is the _action_ parameter, basically I use this to point to different handler. We will modify the exsiting event for sock and redis like this;
+
+```javascript
+  // redis event
+  self.onRedis = function(ch,json){
+    var msg = JSON.parse(json);
+    switch(msg.action){
+      case "message":
+        self.onRedisMessage(msg);
+        break;
+      case "pm":
+        self.onRedisPM(msg);
+        break;
+    }
+  };
+
+  self.redis.on(self.onRedis);
+
+  // sock event
+  self.onSock = function(json){
+    var msg = JSON.parse(json);
+    switch(msg.action){
+      case "message":
+        self.onSockMessage(msg);
+        break;
+      case "pm":
+        self.onSockPM(msg);
+        break;
+    }
+  };
+```
+
+As you can see when the event been triggered, I simply use switch/case to call corresponding handler. And we define those handler like this.
+
+```javascript
+// sock event
+User.prototype.onSockMessage = function(msg){
+  this.pub(msg);
+}
+
+User.prototype.onSockPM = function(msg){
+  this.pub(msg);
+  msg.action = "pm_sent";
+  this.write(msg);
+}
+
+// redis event
+User.prototype.onRedisMessage = function(msg){
+  this.write(msg);
+}
+
+User.prototype.onRedisPM = function(msg){
+  if(msg.target.id == this.id){
+    this.write(msg);
+  }
+}
+```
+
+> Again, the client side need to be changed to fit the server side. I won't address that but you can find the source [here](https://github.com/nightspirit/redis-sockjs-chat/blob/master/index.html)
