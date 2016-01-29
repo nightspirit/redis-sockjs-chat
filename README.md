@@ -65,3 +65,98 @@ server.listen(PORT);
 
 ## 2. Scale your application with Redis Pub/Sub
 ![](https://dl.dropboxusercontent.com/u/7604339/redis-sockjs-chat/multi.png)
+
+In order to use redis, we will create a singleton for each process. The singleton contain two redis client instances. One for publishing and one for subscribtion. Here is a simple class for the redis singleton.
+
+```javascript
+var redis = require('redis');
+var cfg = {
+  host: "127.0.0.1",
+  port: "6379",
+  channel: "chat"
+};
+
+function Redis(){
+  this.publisher = redis.createClient(cfg.port,cfg.host);
+  this.subscriber = redis.createClient(cfg.port,cfg.host);
+  this.subscriber.subscribe(cfg.channel);
+}
+
+Redis.prototype.pub = function(msg){
+  this.publisher.publish(cfg.channel, JSON.stringify(msg));
+}
+
+Redis.prototype.on = function(callback){
+  this.subscriber.on('message',callback);
+}
+
+Redis.prototype.off = function(callback){
+  this.subscriber.removeListener('message',callback);
+}
+
+module.exports = Redis;
+```
+
+For each websocket, I would like a write a wrpper class to encapsulate the event and logic. I will name it as User.
+
+```javascript
+function User(sock,redis){
+  var self = this;
+  self.sock = sock;
+  self.redis = redis;
+
+  // redis event
+  self.onRedis = function(ch,json){
+    var msg = JSON.parse(json);
+    self.write(msg);
+  };
+
+  self.redis.on(self.onRedis);
+
+  // sock event
+  self.onSock = function(json){
+    var msg = JSON.parse(json);
+    self.pub(msg);
+  };
+
+  self.sock.on('data',self.onSock);
+
+  self.sock.on('close',function(){
+    self.redis.off(self.onRedis);
+  });
+
+}
+
+User.prototype.pub = function(msg){
+  this.redis.pub(msg);
+};
+
+User.prototype.write = function(msg){
+  this.sock.write(JSON.stringify(msg));
+};
+
+module.exports = User;
+```
+
+Back to the server.js, then we can modify exisiting code like this.
+
+```javascript
+// CLASS
+var Redis = require('./redis');
+var User = require('./user');
+
+// instance
+var redis = new Redis();
+var users = {};
+
+sock_server.on('connection', function(sock) {
+  users[sock.id] = new User(sock,redis);
+  sock.on('close', function() {
+    console.log(sock.id + " closed");
+    delete users[sock.id];
+  });
+});
+
+```
+
+> Try launch two applications in different port. With redis, they can still talk to each others.
