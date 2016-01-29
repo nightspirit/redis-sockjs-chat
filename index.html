@@ -21,17 +21,8 @@
       <br/>
       <ul class="list-group">
         <div class="list-group-item"
-             ng-repeat="m in vm.messages | reverse"
-             ng-switch="m.action">
-          <div ng-switch-when="message">
-            <a ng-click="vm.pm({id:m.id,user:m.user})">{{m.user}}</a> : {{m.message}}
-          </div>
-          <div ng-switch-when="pm">
-            <a ng-click="vm.pm({id:m.id,user:m.user})">{{m.user}}</a> pm you : {{m.message}}
-          </div>
-          <div ng-switch-when="pm_sent">
-            you pm <a ng-click="vm.pm(m.target)">{{m.target.user}}</a> : {{m.message}}
-          </div>
+             ng-repeat="m in vm.messages | reverse">
+          {{m.message}}
         </div>
       </ul>
     </div>
@@ -39,13 +30,11 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.4.8/angular.min.js"></script>
     <script>
       (function(){
-
         chatCtrl.$inject = ['$timeout'];
         function chatCtrl($timeout){
           var vm = this;
           vm.messages = [];
           vm.input = "";
-          vm.target = null;
           vm.connected = false;
           vm.sock = new SockJS('/sock');
 
@@ -67,34 +56,15 @@
             },0);
           }
 
-          vm.pm = function(t){
-            if(!!vm.target && vm.target.id == t.id){
-              vm.target = null;
-            }else{
-              vm.target = t;
-            }
-          }
-
           vm.submit = function(){
             if(!vm.input) return;
-            
-            var msg;
-            if(!!vm.target){
-              msg = {
-                action : "pm",
-                target : vm.target,
-                message : vm.input
-              };
-            }else{
-              msg = {
-                action : "message",
-                message : vm.input
-              };
-            }
-            
+
+            var msg = {
+              message : vm.input
+            };
+
             vm.sock.send(JSON.stringify(msg));
             vm.input = "";
-            vm.target = "";
           }
         }
 
