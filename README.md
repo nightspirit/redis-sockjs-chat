@@ -2,6 +2,7 @@
 Build a simple chat server with redis and sockjs
 
 ## 1. Build a websocket server to broadcast messages
+![](https://dl.dropboxusercontent.com/u/7604339/redis-sockjs-chat/single.png)
 
 First of all we need these packages as dependency.
 ```javascript
@@ -60,4 +61,7 @@ console.log('Listening on ' + PORT );
 server.listen(PORT);
 ```
 
->  Here I won't address client side script too much. you can find it in [source code](https://github.com/nightspirit/redis-sockjs-chat/blob/sockjs/index.html)
+>  Here I won't address client side script too much. you can find it [here ](https://github.com/nightspirit/redis-sockjs-chat/blob/sockjs/index.html)
+
+## 2. Scale your application with Redis Pub/Sub
+![](https://dl.dropboxusercontent.com/u/7604339/redis-sockjs-chat/multi.png)
