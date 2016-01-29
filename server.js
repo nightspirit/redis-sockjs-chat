@@ -4,8 +4,7 @@ var http = require('http');
 
 var sock_server = sockjs.createServer({sockjs_url: "http://cdn.jsdelivr.net/sockjs/1.0.1/sockjs.min.js"});
 
-
-/* single process without redis
+// single process without redis
 var users = {};
 
 sock_server.on('connection', function(sock) {
@@ -15,25 +14,6 @@ sock_server.on('connection', function(sock) {
       users[k].write(json);
     });
   });
-  sock.on('close', function() {
-    console.log(sock.id + " closed");
-    delete users[sock.id];
-  });
-});
-*/
-
-
-// multi processes with redis
-// CLASS
-var Redis = require('./redis');
-var User = require('./user');
-
-// instanse
-var redis = new Redis();
-var users = {};
-
-sock_server.on('connection', function(sock) {
-  users[sock.id] = new User(sock,redis);
   sock.on('close', function() {
     console.log(sock.id + " closed");
     delete users[sock.id];
