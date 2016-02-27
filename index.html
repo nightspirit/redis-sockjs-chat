@@ -23,14 +23,24 @@
         <div class="list-group-item"
              ng-repeat="m in vm.messages | reverse"
              ng-switch="m.action">
+          <div ng-switch-when="user_info">
+            Welcome! {{m.name}}
+          </div>
+          <div ng-switch-when="user_join">
+            <a ng-click="vm.pm({id:m.id,user:m.name})">{{m.name}}</a> joined.
+          </div>
+          <div ng-switch-when="user_left">
+            {{m.name}} left.
+          </div>
           <div ng-switch-when="message">
-            <a ng-click="vm.pm({id:m.id,user:m.user})">{{m.user}}</a> : {{m.message}}
+            <span ng-if="m.id == vm.me.id">You</span>
+            <a ng-if="m.id != vm.me.id" ng-click="vm.pm({id:m.id,name:m.name})">{{m.name}}</a> : {{m.message}}
           </div>
           <div ng-switch-when="pm">
-            <a ng-click="vm.pm({id:m.id,user:m.user})">{{m.user}}</a> pm you : {{m.message}}
+            <a ng-click="vm.pm({id:m.id,user:m.name})">{{m.name}}</a> pm you : {{m.message}}
           </div>
           <div ng-switch-when="pm_sent">
-            you pm <a ng-click="vm.pm(m.target)">{{m.target.user}}</a> : {{m.message}}
+            You pm <a ng-click="vm.pm(m.target)">{{m.target.name}}</a> : {{m.message}}
           </div>
         </div>
       </ul>
@@ -48,6 +58,7 @@
           vm.target = null;
           vm.connected = false;
           vm.sock = new SockJS('/sock');
+          vm.me = {};
 
           vm.sock.onopen = function(){
             $timeout(function(){
@@ -62,8 +73,16 @@
           }
 
           vm.sock.onmessage = function(e){
+            var msg = JSON.parse(e.data);
+            console.log(msg);
             $timeout(function(){
-              vm.messages.push(JSON.parse(e.data));
+              if(msg.action == "user_info"){
+                vm.me = {
+                  id : msg.id,
+                  name: msg.name
+                }
+              }
+              vm.messages.push(msg);
             },0);
           }
 
@@ -77,7 +96,7 @@
 
           vm.submit = function(){
             if(!vm.input) return;
-            
+
             var msg;
             if(!!vm.target){
               msg = {
@@ -91,7 +110,7 @@
                 message : vm.input
               };
             }
-            
+
             vm.sock.send(JSON.stringify(msg));
             vm.input = "";
             vm.target = "";

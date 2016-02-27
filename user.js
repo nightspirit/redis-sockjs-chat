@@ -2,7 +2,7 @@ function User(sock,redis){
   var self = this;
   self.sock = sock;
   self.redis = redis;
-  
+
   self.id = self.sock.id;
   self.name = "User #" + Date.now().toString().slice(-3);
 
@@ -16,6 +16,12 @@ function User(sock,redis){
         break;
       case "pm":
         self.onRedisPM(msg);
+        break;
+      case "user_join":
+        self.onRedisUserJoin(msg);
+        break;
+      case "user_left":
+        self.onRedisUserLeft(msg);
         break;
     }
   };
@@ -38,20 +44,30 @@ function User(sock,redis){
   self.sock.on('data',self.onSock);
 
   self.sock.on('close',function(){
+    self.left();
     self.redis.off(self.onRedis);
   });
 
+  self.join();
 }
 
 User.prototype.pub = function(msg){
   msg.id = this.id;
-  msg.user = this.name;
+  msg.name = this.name;
   this.redis.pub(msg);
 };
 
 User.prototype.write = function(msg){
   this.sock.write(JSON.stringify(msg));
 };
+
+User.prototype.join = function(){
+  this.pub({ action: "user_join" });
+}
+
+User.prototype.left = function(){
+  this.pub({ action: "user_left" });
+}
 
 // sock event
 User.prototype.onSockMessage = function(msg){
@@ -60,6 +76,7 @@ User.prototype.onSockMessage = function(msg){
 
 User.prototype.onSockPM = function(msg){
   this.pub(msg);
+  // echo back
   msg.action = "pm_sent";
   this.write(msg);
 }
@@ -74,5 +91,17 @@ User.prototype.onRedisPM = function(msg){
     this.write(msg);
   }
 }
+
+User.prototype.onRedisUserJoin = function(msg){
+  if(msg.id == this.id){
+    msg.action = "user_info";
+  }
+  this.write(msg);
+}
+
+User.prototype.onRedisUserLeft = function(msg){
+  this.write(msg);
+}
+
 
 module.exports = User;
