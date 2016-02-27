@@ -175,7 +175,7 @@ In order to add more features, we have to send different types of message. And a
   action: "pm",
   target: {
     id: 12345,
-    user: "foo"
+    name: "foo"
   }
   message: "How are you"
 }
