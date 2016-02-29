@@ -66,7 +66,7 @@ server.listen(PORT);
 ## 2. Scale your application with Redis Pub/Sub
 ![](https://dl.dropboxusercontent.com/u/7604339/redis-sockjs-chat/multi.png)
 
-In order to use redis, we will create a singleton for each process. The singleton contain two redis client instances. One for publishing and one for subscribtion. Here is a simple class for the redis singleton.
+In order to use redis, we will create a singleton for each process. The singleton contain two redis client instances. One is for publishing anthoer is for subscribtion. Here is a simple class for the redis singleton.
 
 ```javascript
 var redis = require('redis');
@@ -97,7 +97,7 @@ Redis.prototype.off = function(callback){
 module.exports = Redis;
 ```
 
-For each websocket, I would like a write a wrpper class to encapsulate the event and logic. I will name it as User.
+For each websocket, I'd like a write a wrpper class to encapsulate the event and logic. I will name it as User.
 
 ```javascript
 function User(sock,redis){
@@ -163,7 +163,7 @@ sock_server.on('connection', function(sock) {
 
 ## 3. Add more features, start making complex chat application
 
-In order to add more features, we have to send different types of message. And according to that we guide them into different handler. Here are examples how you define your message.
+In order to add more features, we have to send different action of message. According to message action that we direct them into different handler. Here are examples how you define your message.
 
 ```javascript
 {
@@ -181,7 +181,7 @@ In order to add more features, we have to send different types of message. And a
 }
 ```
 
-The most important part is the _action_ parameter, basically I use this to point to different handler. We will modify the exsiting event for sock and redis like this;
+The most important part is the _action_ parameter, basically I use this to direct to different handler. We will modify the exsiting event for sock and redis like this;
 
 ```javascript
   // redis event
@@ -213,7 +213,7 @@ The most important part is the _action_ parameter, basically I use this to point
   };
 ```
 
-As you can see when the event been triggered, I simply use switch/case to call corresponding handler. And we define those handler like this.
+As you can see when the event been triggered, I simply use switch/case to call corresponding handler. And we define those handlers like this.
 
 ```javascript
 // sock event
